@@ -71,9 +71,16 @@ class OrderControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.productName").value("Product name is required"))
-                .andExpect(jsonPath("$.quantity").value("Quantity must be at least 1"))
-                .andExpect(jsonPath("$.price").value("Price must be greater than 0"));
+                .andExpect(jsonPath("$.status")
+                        .value(400))
+                .andExpect(jsonPath("$.message")
+                        .value("Validation failed"))
+                .andExpect(jsonPath("$.errors.productName")
+                        .value("Product name is required"))
+                .andExpect(jsonPath("$.errors.quantity")
+                        .value("Quantity must be at least 1"))
+                .andExpect(jsonPath("$.errors.price")
+                        .value("Price must be greater than 0"));
     }
     @Test
     void getOrderById_shouldReturnOrder() throws Exception {

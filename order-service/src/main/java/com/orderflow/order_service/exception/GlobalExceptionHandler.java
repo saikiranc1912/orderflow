@@ -5,8 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.orderflow.order_service.exception.OrderNotFoundException;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +14,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException exception) {
 
         Map<String, String> errors = new HashMap<>();
@@ -25,16 +25,33 @@ public class GlobalExceptionHandler {
                         errors.put(error.getField(), error.getDefaultMessage())
                 );
 
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation failed",
+                errors,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
     }
 
     @ExceptionHandler(OrderNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleOrderNotFound(
+    public ResponseEntity<ErrorResponse> handleOrderNotFound(
             OrderNotFoundException exception) {
 
-        Map<String, String> error = new HashMap<>();
-        error.put("message", exception.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                exception.getMessage(),
+                null,
+                LocalDateTime.now()
+        );
 
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.NOT_FOUND
+        );
     }
 }

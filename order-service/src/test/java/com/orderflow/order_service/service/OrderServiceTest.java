@@ -4,6 +4,7 @@ import com.orderflow.order_service.dto.OrderRequest;
 import com.orderflow.order_service.entity.Order;
 import com.orderflow.order_service.dto.OrderResponse;
 import com.orderflow.order_service.repository.OrderRepository;
+import com.orderflow.order_service.service.KafkaProducerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,12 +16,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.orderflow.order_service.exception.OrderNotFoundException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private KafkaProducerService kafkaProducerService;
 
     @InjectMocks
     private OrderService orderService;
@@ -41,6 +46,10 @@ class OrderServiceTest {
         when(orderRepository.save(order)).thenReturn(savedOrder);
 
         OrderResponse response = orderService.createOrder(order);
+
+        verify(kafkaProducerService).publishOrderCreatedEvent(
+                org.mockito.ArgumentMatchers.any()
+        );
 
         assertEquals("Laptop", response.getProductName());
         assertEquals(2, response.getQuantity());

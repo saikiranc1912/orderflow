@@ -6,6 +6,7 @@ import com.orderflow.order_service.entity.Order;
 import com.orderflow.order_service.exception.OrderNotFoundException;
 import com.orderflow.order_service.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import com.orderflow.order_service.event.OrderCreatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +19,14 @@ public class OrderService {
             LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
+    private final KafkaProducerService kafkaProducerService;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(
+            OrderRepository orderRepository,
+            KafkaProducerService kafkaProducerService) {
+
         this.orderRepository = orderRepository;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     public OrderResponse createOrder(Order order) {
@@ -30,6 +36,20 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         logger.info("Order created successfully with id: {}", savedOrder.getId());
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                savedOrder.getId(),
+                savedOrder.getProductName(),
+                savedOrder.getQuantity(),
+                savedOrder.getPrice()
+        );
+
+        kafkaProducerService.publishOrderCreatedEvent(event);
+
+        logger.info(
+                "Order created event published for order id: {}",
+                savedOrder.getId()
+        );
 
         return mapToResponse(savedOrder);
     }
